@@ -30,7 +30,7 @@ from cse251turtle import *
 
 # Include CSE 251 common Python files. 
 import os, sys
-sys.path.append('code')   # Do not change the path. 
+sys.path.append('code')   # Do not change the path. //changed to work on desktop
 from cse251 import *
 
 
