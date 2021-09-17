@@ -165,12 +165,28 @@ def run_with_threads(tur, log, main_turtle):
     # You need to use 4 threads where each thread concurrently drawing one type of shape.
     # You are free to change any functions in this code except main()
 
+    t1 = threading.Thread(target=draw_squares, args=(tur,))
+    t2 = threading.Thread(target=draw_circles, args=(tur,))
+    t3 = threading.Thread(target=draw_triangles, args=(tur,))
+    t4 = threading.Thread(target=draw_rectangles, args=(tur,))
+
     log.step_timer('All drawing commands have been created')
 
     log.write(f'Number of Drawing Commands: {tur.get_command_count()}')
 
+    t1.start()
+    t2.start()
+    t3.start()
+    t4.start()
+
+    t1.join()
+    t2.join()
+    t3.join()
+    t4.join()
+    
     # Play the drawing commands that were created
     tur.play_commands(main_turtle)
+
     log.stop_timer('Total drawing time')
     tur.clear()
 
@@ -194,7 +210,7 @@ def main():
     turtle251 = CSE251Turtle()
 
     # Test 1 - Drawing with no threads
-    run_no_threads(turtle251, log, main_turtle)
+    #run_no_threads(turtle251, log, main_turtle)
     
     main_turtle.clear()
 
