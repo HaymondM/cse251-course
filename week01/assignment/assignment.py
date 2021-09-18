@@ -34,18 +34,27 @@ sys.path.append('../../code')   # Do not change the path.
 from cse251 import *
 
 
-def draw_square(tur, x, y, side, color='black'):
+
+def draw_square(tur,lock, x, y, side, color='black'):
     """Draw Square"""
+    if lock:
+        lock.acquire()
+
     tur.move(x, y)
     tur.setheading(0)
     tur.color(color)
     for _ in range(4):
         tur.forward(side)
         tur.right(90)
+    if lock:
+        lock.release()
 
 
-def draw_circle(tur, x, y, radius, color='red'):
+def draw_circle(tur,lock, x, y, radius, color='red'):
     """Draw Circle"""
+    if lock:
+        lock.acquire()
+
     steps = 8
     circumference = 2 * math.pi * radius
 
@@ -59,10 +68,16 @@ def draw_circle(tur, x, y, radius, color='red'):
     for _ in range(steps):
         tur.forward(circumference / steps)
         tur.right(360 / steps)
+    if lock:
+        lock.release()
 
 
-def draw_rectangle(tur, x, y, width, height, color='blue'):
+def draw_rectangle(tur,lock, x, y, width, height, color='blue'):
     """Draw a rectangle"""
+
+    if lock:
+        lock.acquire()
+
     tur.move(x, y)
     tur.setheading(0)
     tur.color(color)
@@ -75,15 +90,22 @@ def draw_rectangle(tur, x, y, width, height, color='blue'):
     tur.forward(height)
     tur.right(90)
 
+    if lock:
+        lock.release()
 
-def draw_triangle(tur, x, y, side, color='green'):
+
+def draw_triangle(tur,lock, x, y, side, color='green'):
     """Draw a triangle"""
+    if lock:
+        lock.acquire()
     tur.move(x, y)
     tur.setheading(0)
     tur.color(color)
     for _ in range(4):
         tur.forward(side)
         tur.left(120)
+    if lock:
+        lock.release()
 
 
 def draw_coord_system(tur, x, y, size=300, color='black'):
@@ -94,37 +116,37 @@ def draw_coord_system(tur, x, y, size=300, color='black'):
         tur.backward(size)
         tur.left(90)
 
-def draw_squares(tur):
+def draw_squares(tur, lock):
     """Draw a group of squares"""
     for x in range(-300, 350, 200):
         for y in range(-300, 350, 200):
-            draw_square(tur, x - 50, y + 50, 100)
+            draw_square(tur,lock, x - 50, y + 50, 100)
 
 
-def draw_circles(tur):
+def draw_circles(tur, lock):
     """Draw a group of circles"""
     for x in range(-300, 350, 200):
         for y in range(-300, 350, 200):
-            draw_circle(tur, x, y-2, 50)
+            draw_circle(tur,lock, x, y-2, 50)
 
 
-def draw_triangles(tur):
+def draw_triangles(tur, lock):
     """Draw a group of triangles"""
     for x in range(-300, 350, 200):
         for y in range(-300, 350, 200):
-            draw_triangle(tur, x-30, y-30+10, 60)
+            draw_triangle(tur,lock, x-30, y-30+10, 60)
 
 
-def draw_rectangles(tur):
+def draw_rectangles(tur,lock):
     """Draw a group of Rectangles"""
     for x in range(-300, 350, 200):
         for y in range(-300, 350, 200):
-            draw_rectangle(tur, x-10, y+5, 20, 15)
+            draw_rectangle(tur,lock, x-10, y+5, 20, 15)
 
 
 def run_no_threads(tur, log, main_turtle):
     """Draw different shapes without using threads"""
-
+    lock = None
     # Draw Coords system
     tur.pensize(0.5)
     draw_coord_system(tur, 0, 0, size=375)
@@ -134,10 +156,10 @@ def run_no_threads(tur, log, main_turtle):
     log.start_timer('Start Drawing No Threads')
     tur.move(0, 0)
 
-    draw_squares(tur)
-    draw_circles(tur)
-    draw_triangles(tur)
-    draw_rectangles(tur)
+    draw_squares(tur, lock)
+    draw_circles(tur, lock)
+    draw_triangles(tur, lock)
+    draw_rectangles(tur, lock)
 
     log.step_timer('All drawing commands have been created')
 
@@ -150,9 +172,11 @@ def run_no_threads(tur, log, main_turtle):
     tur.clear()
 
 
+
 def run_with_threads(tur, log, main_turtle):
     """Draw different shapes using threads"""
-
+    threads=[]
+    lock = threading.Lock()
     # Draw Coors system
     tur.pensize(0.5)
     draw_coord_system(tur, 0, 0, size=375)
@@ -165,24 +189,24 @@ def run_with_threads(tur, log, main_turtle):
     # You need to use 4 threads where each thread concurrently drawing one type of shape.
     # You are free to change any functions in this code except main()
 
-    t1 = threading.Thread(target=draw_squares, args=(tur,))
-    t2 = threading.Thread(target=draw_circles, args=(tur,))
-    t3 = threading.Thread(target=draw_triangles, args=(tur,))
-    t4 = threading.Thread(target=draw_rectangles, args=(tur,))
+    t1 = threading.Thread(target=draw_squares, args=(tur, lock,))
+    threads.append(t1)
+    t2 = threading.Thread(target=draw_circles, args=(tur, lock,))
+    threads.append(t2)
+    t3 = threading.Thread(target=draw_triangles, args=(tur,lock,))
+    threads.append(t3)
+    t4 = threading.Thread(target=draw_rectangles, args=(tur,lock,))
+    threads.append(t4)
 
     log.step_timer('All drawing commands have been created')
 
     log.write(f'Number of Drawing Commands: {tur.get_command_count()}')
 
-    t1.start()
-    t2.start()
-    t3.start()
-    t4.start()
+    for t in threads:
+        t.start()
 
-    t1.join()
-    t2.join()
-    t3.join()
-    t4.join()
+    for t in threads:
+        t.join()
     
     # Play the drawing commands that were created
     tur.play_commands(main_turtle)
@@ -210,7 +234,7 @@ def main():
     turtle251 = CSE251Turtle()
 
     # Test 1 - Drawing with no threads
-    #run_no_threads(turtle251, log, main_turtle)
+    run_no_threads(turtle251, log, main_turtle)
     
     main_turtle.clear()
 
