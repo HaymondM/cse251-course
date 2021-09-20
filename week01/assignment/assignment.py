@@ -183,7 +183,7 @@ def run_with_threads(tur, log, main_turtle):
     t2.join()
     t3.join()
     t4.join()
-    
+
     # Play the drawing commands that were created
     tur.play_commands(main_turtle)
 
@@ -210,7 +210,7 @@ def main():
     turtle251 = CSE251Turtle()
 
     # Test 1 - Drawing with no threads
-    #run_no_threads(turtle251, log, main_turtle)
+    run_no_threads(turtle251, log, main_turtle)
     
     main_turtle.clear()
 
