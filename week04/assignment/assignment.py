@@ -2,7 +2,7 @@
 Course: CSE 251
 Lesson Week: 04
 File: assignment.py
-Author: <Your name>
+Author: Marshall Haymond
 
 Purpose: Assignment 04 - Factory and Dealership
 
@@ -77,13 +77,17 @@ class Queue251():
 class Factory(threading.Thread):
     """ This is a factory.  It will create cars and place them on the car queue """
 
-    def __init__(self):
+    def __init__(self,empty, full, car_q):
         # TODO, you need to add arguments that will pass all of data that 1 factory needs
         # to create cars and to place them in a queue.
-        pass
+        threading.Thread.__init__(self)
+        self.empty = empty
+        self.full = full
+        self.car_queue = car_q
 
 
     def run(self):
+        count = 0
         for i in range(CARS_TO_PRODUCE):
             # TODO Add you code here
             """
@@ -91,18 +95,32 @@ class Factory(threading.Thread):
             place the car on the queue
             signal the dealer that there is a car on the queue
            """
+            #count+=1
+            #print(count)
 
-        # signal the dealer that there there are not more cars
-        pass
+            self.empty.acquire()
+            car = Car()
+            #car.display()
+            self.car_queue.put(car)
+            print (self.car_queue.size())
+            self.full.release()
+            if self.car_queue.size() == 10:
+                break
 
+        # signal the dealer that there are no more cars
+        #print()
+        self.empty.release()
 
 class Dealer(threading.Thread):
     """ This is a dealer that receives cars """
 
-    def __init__(self):
+    def __init__(self, full, empty, car_q):
+        threading.Thread.__init__(self)
         # TODO, you need to add arguments that pass all of data that 1 factory needs
         # to create cars and to place them in a queue
-        pass
+        self.full = full
+        self.empty= full
+        self.car_queue = car_q
 
     def run(self):
         while True:
@@ -111,18 +129,35 @@ class Dealer(threading.Thread):
             take the car from the queue
             signal the factory that there is an empty slot in the queue
             """
+            #self.full.acquire()
+            #print('work?')
+            #print (self.car_queue.size())
+            if self.car_queue.size() > 0:
+                
+                self.car_queue.get()
+                self.full.acquire()
+                self.empty.release()
+                
+                
+                #print(self.car_queue)
 
-            # Sleep a little after selling a car
-            # Last statement in this for loop - don't change
-            time.sleep(random.random() / (SLEEP_REDUCE_FACTOR))
+
+                # Sleep a little after selling a car
+                # Last statement in this for loop - don't change
+                time.sleep(random.random() / (SLEEP_REDUCE_FACTOR))
+            else:
+                break
 
 
 
 def main():
     log = Log(show_terminal=True)
-
+  
     # TODO Create semaphore(s)
-    # TODO Create queue251 
+    empty = threading.Semaphore(MAX_QUEUE_SIZE)
+    full = threading.Semaphore(0)
+    # TODO Create queue251
+    car_q = Queue251() 
     # TODO Create lock(s) ?
 
     # This tracks the length of the car queue during receiving cars by the dealership
@@ -130,14 +165,17 @@ def main():
     queue_stats = [0] * MAX_QUEUE_SIZE
 
     # TODO create your one factory
-
+    fact = Factory(empty,full, car_q)
     # TODO create your one dealership
-
+    deal = Dealer(full,empty, car_q)
     log.start_timer()
 
     # TODO Start factory and dealership
-
+    fact.start()
+    deal.start()
     # TODO Wait for factory and dealership to complete
+    fact.join()
+    deal.join()
 
     log.stop_timer(f'All {sum(queue_stats)} have been created')
 
