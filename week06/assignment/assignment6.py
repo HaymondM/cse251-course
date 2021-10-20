@@ -82,10 +82,10 @@ class Marble_Creator(mp.Process):
         'Brown', 'Gold', 'Blue-Green', 'Antique Bronze', 'Mint Green', 'Royal Blue', 
         'Light Orange', 'Pastel Blue', 'Middle Green')
 
-    def __init__(self):
+    def __init__(self,conn):
         mp.Process.__init__(self)
         # TODO Add any arguments and variables here
-
+        self.conn = conn
     def run(self):
         '''
         for each marble:
@@ -181,9 +181,11 @@ def main():
     log.write(f'settings["wrapper-delay"]   = {settings[WRAPPER_DELAY]}')
 
     # TODO: create Pipes between creator -> bagger -> assembler -> wrapper
-
+    parent_conn_creator, child_conn__creator = mp.Pipe()
+    parent_conn_bagger, child_conn__bagger = mp.Pipe()
+    parent_conn_assembler, child_conn__assembler = mp.Pipe()
     # TODO create variable to be used to count the number of gifts
-
+    num_gifts = 0
     # delete final boxes file
     if os.path.exists(BOXES_FILENAME):
         os.remove(BOXES_FILENAME)
@@ -191,12 +193,25 @@ def main():
     log.write('Create the processes')
 
     # TODO Create the processes (ie., classes above)
+    p1 = mp.Process(target=Marble_Creator, args=(parent_conn_creator,)) 
+    p2 = mp.Process(target=Bagger, args=(child_conn__creator,parent_conn_bagger,)) 
+    p3 = mp.Process(target=Assembler, args=(child_conn__bagger,parent_conn_assembler,))
+    p4 = mp.Process(target=Wrapper, args=(child_conn__assembler,))  
 
     log.write('Starting the processes')
     # TODO add code here
+    p1.start()
+    p2.start()
+    p3.start()
+    p4.start()
 
     log.write('Waiting for processes to finish')
     # TODO add code here
+    p1.join()
+    p2.join()
+    p3.join()
+    p4.join()
+
 
     display_final_boxes(BOXES_FILENAME, log)
 

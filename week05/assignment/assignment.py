@@ -87,33 +87,62 @@ class Queue251():
 class Factory(threading.Thread):
     """ This is a factory.  It will create cars and place them on the car queue """
 
-    def __init__(self):
+    def __init__(self,full,empty,car_q, barr, factory_stats):
+        threading.Thread.__init__(self)
         self.cars_to_produce = random.randint(200, 300)     # Don't change
-
+        self.full = full
+        self.empty= empty
+        self.car_queue = car_q
+        self.barrier = barr
+        self.facto_s = factory_stats
 
     def run(self):
         # TODO produce the cars, the send them to the dealerships
+        self.facto_s.append(self.cars_to_produce)
+        for i in range(self.cars_to_produce):
+            print(i)
+            self.empty.acquire()
+            car = Car()
+            self.car_queue.put(car)
+            self.full.release()
+            if i == self.cars_to_produce-1:
+                print("Here!!!!")
+                self.car_queue.put("DONE")
 
-        # TODO wait until all of the factories are finished producing cars
-
+            # TODO wait until all of the factories are finished producing cars
+        self.barrier.wait()
         # TODO "Wake up/signal" the dealerships one more time.  Select one factory to do this
-        pass
+        #Not sure about this part
+        self.empty.acquire()
 
 
 
 class Dealer(threading.Thread):
     """ This is a dealer that receives cars """
 
-    def __init__(self):
-        pass
+    def __init__(self,full,empty,car_q):
+        threading.Thread.__init__(self)
+        self.full = full
+        self.empty= empty
+        self.car_queue = car_q
 
     def run(self):
         while True:
-            # TODO handle a car
+            if self.car_queue.get_max_size() != 0:
+                self.empty.release()
+                #print(self.car_queue.get_max_size())
+                # TODO handle a car
+                self.car_queue.get()
+                self.full.acquire()
 
-            # Sleep a little - don't change.  This is the last line of the loop
-            time.sleep(random.random() / (SLEEP_REDUCE_FACTOR + 0))
+                #Need to fix
+                #if self.car_queue.get() == "DONE":
+                #    break
 
+                
+                # Sleep a little - don't change.  This is the last line of the loop
+                time.sleep(random.random() / (SLEEP_REDUCE_FACTOR + 0))
+            self.full.release()
 
 
 def run_production(factory_count, dealer_count):
@@ -122,26 +151,41 @@ def run_production(factory_count, dealer_count):
     """
 
     # TODO Create semaphore(s)
+    empty = threading.Semaphore(MAX_QUEUE_SIZE)
+    full= threading.Semaphore()
+
     # TODO Create queue
+    car_queue = Queue251()
+
     # TODO Create lock(s)
     # TODO Create barrier(s)
+    barrier = threading.Barrier(MAX_QUEUE_SIZE)
 
     # This is used to track the number of cars receives by each dealer
     dealer_stats = list([0] * dealer_count)
+    factory_stats = list([0] * factory_count)
 
     # TODO create your factories, each factory will create CARS_TO_CREATE_PER_FACTORY
-
+    facto = [ Factory(full,empty, car_queue, barrier, factory_stats ) for i in range(11)]
     # TODO create your dealerships
-
+    dealer = [ Dealer(full,empty, car_queue)for i in range(11)]
     log.start_timer()
 
     # TODO Start all dealerships
+    for i in range(11):
+        dealer[i].start()
 
     time.sleep(1)   # make sure all dealers have time to start
 
     # TODO Start all factories
+    for i in range(11):
+        facto[i].start()
 
     # TODO Wait for factories and dealerships to complete
+    for i in range(11):
+        dealer[i].join()
+    for i in range(11):
+        facto[i].join()
 
     run_time = log.stop_timer(f'{sum(dealer_stats)} cars have been created')
 
