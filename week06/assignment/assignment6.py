@@ -97,6 +97,7 @@ class Marble_Creator(mp.Process):
             sleep the required amount
         Let the bagger know there are no more marbles
         '''
+        print("In the Marble_Creator")
         for _ in range(self.MARBLE_COUNT+1):
             random_marble = random.choice(self.colors)
             print(random_marble)
