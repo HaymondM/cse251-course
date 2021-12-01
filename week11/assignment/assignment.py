@@ -41,7 +41,7 @@ def guest_partying(id):
     time.sleep(random.uniform(0, 1))
 
 # -----------------------------------------------------------------------------
-def cleaner(id, start_time, sl, lock_c):
+def cleaner(id, start_time, sl, lock_c, lock_g):
     """
     do the following for TIME seconds
     cleaner will wait to try to clean the room (cleaner_waiting())
@@ -49,6 +49,11 @@ def cleaner(id, start_time, sl, lock_c):
         display message STARTING_CLEANING_MESSAGE
         Take some time cleaning (cleaner_cleaning())
         display message STOPPING_CLEANING_MESSAGE
+        wait 
+        get party lock
+        with partylock:
+            if light is 0:
+                with cleaninglockL acrire and then realse
     """
     
     while True:
@@ -67,7 +72,7 @@ def cleaner(id, start_time, sl, lock_c):
 
 
 # -----------------------------------------------------------------------------
-def guest(id, start_time, sl, lock_g):
+def guest(id, start_time, sl, lock_g, lock_c):
     """
     do the following for TIME seconds
     guest will wait to try to get access to the room (guest_waiting())
@@ -116,8 +121,8 @@ def main():
     lock_c = mp.Lock()
     lock_g = mp.Lock()
 
-    processes_c = [mp.Process(target=cleaner, args=(i,start_time, sl, lock_c)) for i in range(CLEANING_STAFF)]
-    processes_g = [mp.Process(target=guest, args=(i,start_time, sl, lock_g)) for i in range(HOTEL_GUESTS)]
+    processes_c = [mp.Process(target=cleaner, args=(i,start_time, sl, lock_c, lock_g)) for i in range(CLEANING_STAFF)]
+    processes_g = [mp.Process(target=guest, args=(i,start_time, sl, lock_g, lock_c)) for i in range(HOTEL_GUESTS)]
 
     #start
     for i in range(CLEANING_STAFF):
